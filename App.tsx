@@ -80,34 +80,47 @@ export default function App() {
   // REGISTRAR ESTUDIANTE
   // =========================
   const registrarEstudiante = async () => {
-    if (!cedula || !nombre || !correo) {
-      mostrarModal("🌸 Atención", "Completa los campos");
-      return;
+  if (!cedula || !nombre || !correo) {
+    mostrarModal("🌸 Atención", "Completa los campos");
+    return;
+  }
+
+  try {
+    setLoadingEstudiante(true);
+
+    await axios.post(`${API}/estudiantes`, {
+      cedula,
+      nombre,
+      correo,
+      celular
+    });
+
+    mostrarModal("🐰 Guardado", "Estudiante registrado");
+
+    setCedula('');
+    setNombre('');
+    setCorreo('');
+    setCelular('');
+
+  } catch (error: any) {
+
+    // 🔥 ERROR CONTROLADO
+    if (error.response?.status === 409) {
+      mostrarModal(
+        "⚠️ Lo siento",
+        error.response.data.message || "Este estudiante ya está registrado"
+      );
+    } else {
+      mostrarModal(
+        "😿 Error",
+        error.response?.data?.message || "No se pudo registrar"
+      );
     }
 
-    try {
-      setLoadingEstudiante(true);
-
-      await axios.post(`${API}/estudiantes`, {
-        cedula,
-        nombre,
-        correo,
-        celular
-      });
-
-      mostrarModal("🐰 Guardado", "Estudiante registrado");
-
-      setCedula('');
-      setNombre('');
-      setCorreo('');
-      setCelular('');
-
-    } catch (error) {
-      mostrarModal("😿 Error", "No se pudo registrar");
-    } finally {
-      setLoadingEstudiante(false);
-    }
-  };
+  } finally {
+    setLoadingEstudiante(false);
+  }
+};
 
   // =========================
   // REGISTRAR NOTAS
