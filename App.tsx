@@ -41,13 +41,16 @@ export default function App() {
   const [loadingEstudiante, setLoadingEstudiante] = useState(false);
   const [loadingNotas, setLoadingNotas] = useState(false);
 
+  // 🎀 MODAL KAWAII
   const [modalVisible, setModalVisible] = useState(false);
   const [titulo, setTitulo] = useState('');
   const [mensaje, setMensaje] = useState('');
+  const [tipo, setTipo] = useState<'ok' | 'error' | 'warning'>('ok');
 
-  const mostrarModal = (t: string, m: string) => {
+  const mostrarModal = (t: string, m: string, tipoModal: any = 'ok') => {
     setTitulo(t);
     setMensaje(m);
+    setTipo(tipoModal);
     setModalVisible(true);
   };
 
@@ -56,7 +59,7 @@ export default function App() {
   // =========================
   const consultar = async () => {
     if (!cedula.trim()) {
-      mostrarModal("🌸 Atención", "Ingresa una cédula");
+      mostrarModal("🌸 Atención", "Ingresa una cédula", "warning");
       return;
     }
 
@@ -66,11 +69,11 @@ export default function App() {
       const res = await axios.get(`${API}/estudiantes/${cedula}`);
       setResultado(res.data);
 
-      mostrarModal("💖 Éxito", "Consulta realizada");
+      mostrarModal("💖 Éxito", "Consulta realizada", "ok");
 
     } catch (error) {
       setResultado(null);
-      mostrarModal("😿 No encontrado", "No existe estudiante");
+      mostrarModal("😿 No encontrado", "No existe estudiante", "error");
     } finally {
       setLoadingConsulta(false);
     }
@@ -80,54 +83,55 @@ export default function App() {
   // REGISTRAR ESTUDIANTE
   // =========================
   const registrarEstudiante = async () => {
-  if (!cedula || !nombre || !correo) {
-    mostrarModal("🌸 Atención", "Completa los campos");
-    return;
-  }
-
-  try {
-    setLoadingEstudiante(true);
-
-    await axios.post(`${API}/estudiantes`, {
-      cedula,
-      nombre,
-      correo,
-      celular
-    });
-
-    mostrarModal("🐰 Guardado", "Estudiante registrado");
-
-    setCedula('');
-    setNombre('');
-    setCorreo('');
-    setCelular('');
-
-  } catch (error: any) {
-
-    // 🔥 ERROR CONTROLADO
-    if (error.response?.status === 409) {
-      mostrarModal(
-        "⚠️ Lo siento",
-        error.response.data.message || "Este estudiante ya está registrado"
-      );
-    } else {
-      mostrarModal(
-        "😿 Error",
-        error.response?.data?.message || "No se pudo registrar"
-      );
+    if (!cedula || !nombre || !correo) {
+      mostrarModal("🌸 Atención", "Completa los campos", "warning");
+      return;
     }
 
-  } finally {
-    setLoadingEstudiante(false);
-  }
-};
+    try {
+      setLoadingEstudiante(true);
+
+      await axios.post(`${API}/estudiantes`, {
+        cedula,
+        nombre,
+        correo,
+        celular
+      });
+
+      mostrarModal("🐰 Guardado", "Estudiante registrado correctamente", "ok");
+
+      setCedula('');
+      setNombre('');
+      setCorreo('');
+      setCelular('');
+
+    } catch (error: any) {
+
+      if (error.response?.status === 409) {
+        mostrarModal(
+          "💔 Ups...",
+          "Este estudiante ya está registrado 💔",
+          "warning"
+        );
+      } else {
+        mostrarModal(
+          "😿 Error",
+          error.response?.data?.message || "No se pudo registrar",
+          "error"
+        );
+      }
+
+    } finally {
+      setLoadingEstudiante(false);
+    }
+  };
 
   // =========================
   // REGISTRAR NOTAS
   // =========================
   const registrarNotas = async () => {
     if (!cedula || !materia) {
-      mostrarModal("🌸 Atención", "Completa datos");
+      mostrarModal("🌸 Atención", "Completa datos", "warning");
       return;
     }
 
@@ -143,7 +147,7 @@ export default function App() {
         nota4: Number(nota4)
       });
 
-      mostrarModal("✨ Guardado", "Notas registradas");
+      mostrarModal("✨ Guardado", "Notas registradas correctamente", "ok");
 
       setMateria('');
       setNota1('');
@@ -152,7 +156,7 @@ export default function App() {
       setNota4('');
 
     } catch (error) {
-      mostrarModal("😿 Error", "No se pudo guardar");
+      mostrarModal("😿 Error", "No se pudo guardar", "error");
     } finally {
       setLoadingNotas(false);
     }
@@ -166,68 +170,42 @@ export default function App() {
       Number(nota4 || 0)
     ) / 4;
 
+  const colorModal =
+    tipo === 'ok' ? '#ffb6d9' :
+    tipo === 'warning' ? '#ffeaa7' :
+    '#ff7675';
+
   return (
     <SafeAreaView style={styles.safe}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
+        <View style={[styles.container, { maxWidth: isDesktop ? 700 : '100%' }]}>
+          <ScrollView contentContainerStyle={{ paddingBottom: 140 }} keyboardShouldPersistTaps="handled">
 
-        <View style={[
-          styles.container,
-          { maxWidth: isDesktop ? 700 : '100%' }
-        ]}>
-
-          <ScrollView
-            contentContainerStyle={{ paddingBottom: 140 }}
-            keyboardShouldPersistTaps="handled"
-          >
-
-            <Text style={[
-              styles.mainTitle,
-              { fontSize: isDesktop ? 34 : 28 }
-            ]}>
+            <Text style={[styles.mainTitle, { fontSize: isDesktop ? 34 : 28 }]}>
               🎀 Sistema de Notas 🎀
             </Text>
 
             {/* CONSULTA */}
             {screen === 'consulta' && (
               <View style={styles.card}>
-
                 <Text style={styles.title}>🌸 Consulta</Text>
 
                 <Text style={styles.label}>Cédula</Text>
-                <TextInput
-                  style={styles.input}
-                  value={cedula}
-                  onChangeText={setCedula}
-                  keyboardType="numeric"
-                />
+                <TextInput style={styles.input} value={cedula} onChangeText={setCedula} keyboardType="numeric" />
 
                 <Text style={styles.label}>Nombre</Text>
-                <TextInput
-                  style={styles.input}
-                  editable={false}
-                  value={resultado?.estudiante?.nombre || ''}
-                />
+                <TextInput style={styles.input} editable={false} value={resultado?.estudiante?.nombre || ''} />
 
                 <TouchableOpacity style={styles.btnPink} onPress={consultar}>
                   <Text style={styles.btnText}>Consultar</Text>
                 </TouchableOpacity>
 
-                {loadingConsulta &&
-                  <ActivityIndicator
-                    size="large"
-                    color="#ff69b4"
-                    style={{ marginTop: 15 }}
-                  />
-                }
+                {loadingConsulta && <ActivityIndicator size="large" color="#ff69b4" style={{ marginTop: 15 }} />}
 
                 {resultado && (
                   <View style={styles.resultBox}>
                     <Text style={styles.subtitle}>💖 Datos</Text>
-
                     <Text>Correo: {resultado.estudiante.correo}</Text>
                     <Text>Celular: {resultado.estudiante.celular}</Text>
 
@@ -238,100 +216,60 @@ export default function App() {
                         <Text>Nota2: {n.nota2}</Text>
                         <Text>Nota3: {n.nota3}</Text>
                         <Text>Nota4: {n.nota4}</Text>
-
                         <Text style={styles.green}>
                           Definitiva: {Number(n.definitiva).toFixed(2)}
                         </Text>
                       </View>
                     ))}
-
                   </View>
                 )}
-
               </View>
             )}
 
             {/* REG ESTUDIANTE */}
             {screen === 'estudiante' && (
               <View style={styles.card}>
-
                 <Text style={styles.title}>🐰 Registrar Estudiante</Text>
 
-                <Text style={styles.label}>Cédula</Text>
-                <TextInput style={styles.input} value={cedula} onChangeText={setCedula} />
-
-                <Text style={styles.label}>Nombre</Text>
-                <TextInput style={styles.input} value={nombre} onChangeText={setNombre} />
-
-                <Text style={styles.label}>Correo</Text>
-                <TextInput style={styles.input} value={correo} onChangeText={setCorreo} />
-
-                <Text style={styles.label}>Celular</Text>
-                <TextInput style={styles.input} value={celular} onChangeText={setCelular} />
+                <TextInput style={styles.input} placeholder="Cédula" value={cedula} onChangeText={setCedula} />
+                <TextInput style={styles.input} placeholder="Nombre" value={nombre} onChangeText={setNombre} />
+                <TextInput style={styles.input} placeholder="Correo" value={correo} onChangeText={setCorreo} />
+                <TextInput style={styles.input} placeholder="Celular" value={celular} onChangeText={setCelular} />
 
                 <TouchableOpacity style={styles.btnBlue} onPress={registrarEstudiante}>
-                  <Text style={styles.btnText}>Registrar Estudiante</Text>
+                  <Text style={styles.btnText}>Registrar</Text>
                 </TouchableOpacity>
 
-                {loadingEstudiante &&
-                  <ActivityIndicator
-                    size="large"
-                    color="#7ec8ff"
-                    style={{ marginTop: 15 }}
-                  />
-                }
-
+                {loadingEstudiante && <ActivityIndicator size="large" color="#7ec8ff" style={{ marginTop: 15 }} />}
               </View>
             )}
 
             {/* NOTAS */}
             {screen === 'notas' && (
               <View style={styles.card}>
-
                 <Text style={styles.title}>🍓 Registrar Nota</Text>
 
-                <Text style={styles.label}>Cédula</Text>
-                <TextInput style={styles.input} value={cedula} onChangeText={setCedula} />
+                <TextInput style={styles.input} placeholder="Cédula" value={cedula} onChangeText={setCedula} />
+                <TextInput style={styles.input} placeholder="Materia" value={materia} onChangeText={setMateria} />
 
-                <Text style={styles.label}>Materia</Text>
-                <TextInput style={styles.input} value={materia} onChangeText={setMateria} />
-
-                {['1', '2', '3', '4'].map((n, i) => (
-                  <View key={i}>
-                    <Text style={styles.label}>Nota {n}</Text>
-                    <TextInput
-                      style={styles.input}
-                      keyboardType="numeric"
-                      value={[nota1, nota2, nota3, nota4][i]}
-                      onChangeText={
-                        [setNota1, setNota2, setNota3, setNota4][i]
-                      }
-                    />
-                  </View>
+                {[nota1, nota2, nota3, nota4].map((v, i) => (
+                  <TextInput
+                    key={i}
+                    style={styles.input}
+                    placeholder={`Nota ${i + 1}`}
+                    keyboardType="numeric"
+                    value={v}
+                    onChangeText={[setNota1, setNota2, setNota3, setNota4][i]}
+                  />
                 ))}
 
-                <View style={styles.row}>
-                  <Text style={styles.scoreBox}>
-                    {definitiva.toFixed(2)}
-                  </Text>
-
-                  <Text style={styles.greenBtn}>
-                    Definitiva
-                  </Text>
-                </View>
+                <Text style={styles.scoreBox}>{definitiva.toFixed(2)}</Text>
 
                 <TouchableOpacity style={styles.btnPink} onPress={registrarNotas}>
-                  <Text style={styles.btnText}>Guardar Notas</Text>
+                  <Text style={styles.btnText}>Guardar</Text>
                 </TouchableOpacity>
 
-                {loadingNotas &&
-                  <ActivityIndicator
-                    size="large"
-                    color="#ff69b4"
-                    style={{ marginTop: 15 }}
-                  />
-                }
-
+                {loadingNotas && <ActivityIndicator size="large" color="#ff69b4" />}
               </View>
             )}
 
@@ -339,50 +277,30 @@ export default function App() {
 
           {/* MENU */}
           <View style={styles.menu}>
-
-            <TouchableOpacity
-              style={[
-                styles.menuBtn,
-                screen === 'consulta' && styles.menuPink
-              ]}
-              onPress={() => setScreen('consulta')}
-            >
-              <Text style={styles.menuText}>Consulta</Text>
+            <TouchableOpacity style={styles.menuBtn} onPress={() => setScreen('consulta')}>
+              <Text>Consulta</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.menuBtn,
-                screen === 'estudiante' && styles.menuBlue
-              ]}
-              onPress={() => setScreen('estudiante')}
-            >
-              <Text style={styles.menuText}>Estudiante</Text>
+            <TouchableOpacity style={styles.menuBtn} onPress={() => setScreen('estudiante')}>
+              <Text>Estudiante</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.menuBtn,
-                screen === 'notas' && styles.menuPink
-              ]}
-              onPress={() => setScreen('notas')}
-            >
-              <Text style={styles.menuText}>Notas</Text>
+            <TouchableOpacity style={styles.menuBtn} onPress={() => setScreen('notas')}>
+              <Text>Notas</Text>
             </TouchableOpacity>
-
           </View>
 
         </View>
 
-        {/* MODAL */}
+        {/* 🎀 MODAL BONITO */}
         <Modal transparent visible={modalVisible} animationType="fade">
           <View style={styles.modalBg}>
-            <View style={styles.modalBox}>
+            <View style={[styles.modalBox, { borderColor: colorModal }]}>
               <Text style={styles.modalTitle}>{titulo}</Text>
               <Text style={styles.modalText}>{mensaje}</Text>
 
               <TouchableOpacity
-                style={styles.modalBtn}
+                style={[styles.modalBtn, { backgroundColor: colorModal }]}
                 onPress={() => setModalVisible(false)}
               >
                 <Text style={styles.btnText}>Aceptar 💖</Text>
@@ -397,19 +315,15 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-
-  safe: {
-    flex: 1,
-    backgroundColor: '#fff5fb'
-  },
-
-  container: {
-    flex: 1,
-    width: '100%',
-    alignSelf: 'center',
-    padding: 15
-  },
-
+  safe: { flex: 1, backgroundColor: '#fff5fb' },
+  container: { flex: 1, padding: 15 },
+  
+subtitle: {
+  fontSize: 18,
+  fontWeight: 'bold',
+  color: '#ff69b4',
+  marginTop: 10
+},
   mainTitle: {
     textAlign: 'center',
     fontWeight: 'bold',
@@ -427,157 +341,94 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#ff69b4',
-    textAlign: 'center',
-    marginBottom: 15
+    textAlign: 'center'
   },
 
-  subtitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#ff69b4'
-  },
-
-  label: {
-    marginTop: 8,
-    marginBottom: 4,
-    fontWeight: '600'
-  },
+  label: { marginTop: 8 },
 
   input: {
     borderWidth: 2,
     borderColor: '#ffd6ea',
     borderRadius: 12,
     padding: 12,
-    backgroundColor: '#fff'
+    marginTop: 6
   },
 
   btnPink: {
     backgroundColor: '#ffd6ea',
-    padding: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-    marginTop: 14
+    padding: 12,
+    borderRadius: 12,
+    marginTop: 10,
+    alignItems: 'center'
   },
 
   btnBlue: {
     backgroundColor: '#d6ecff',
-    padding: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-    marginTop: 14
-  },
-
-  btnText: {
-    fontWeight: 'bold',
-    fontSize: 16
-  },
-
-  resultBox: {
-    marginTop: 15
-  },
-
-  noteBox: {
-    backgroundColor: '#fff7fc',
     padding: 12,
-    borderRadius: 14,
-    marginTop: 10
-  },
-
-  bold: {
-    fontWeight: 'bold'
-  },
-
-  green: {
-    color: 'green',
-    fontWeight: 'bold'
-  },
-
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 15
-  },
-
-  scoreBox: {
-    backgroundColor: '#d8ffd8',
-    padding: 10,
-    borderRadius: 10,
-    fontWeight: 'bold'
-  },
-
-  greenBtn: {
-    backgroundColor: '#c7f7c7',
-    padding: 10,
-    borderRadius: 10
-  },
-
-  menu: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    padding: 12,
-    backgroundColor: '#fff',
-    borderTopWidth: 2,
-    borderColor: '#ffd6ea'
-  },
-
-  menuBtn: {
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    minWidth: 110,
-    borderRadius: 14,
+    borderRadius: 12,
+    marginTop: 10,
     alignItems: 'center'
   },
 
-  menuPink: {
-    backgroundColor: '#ffd6ea'
-  },
+  btnText: { fontWeight: 'bold' },
 
-  menuBlue: {
-    backgroundColor: '#d6ecff'
-  },
+  resultBox: { marginTop: 10 },
+  noteBox: { marginTop: 10 },
 
-  menuText: {
+  bold: { fontWeight: 'bold' },
+  green: { color: 'green' },
+
+  scoreBox: {
+    marginTop: 10,
+    textAlign: 'center',
+    fontSize: 20,
     fontWeight: 'bold'
+  },
+
+  menu: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 10
+  },
+
+  menuBtn: {
+    padding: 10,
+    backgroundColor: '#ffd6ea',
+    borderRadius: 10
   },
 
   modalBg: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'center',
     alignItems: 'center'
   },
 
   modalBox: {
-    width: '82%',
+    width: '80%',
     backgroundColor: '#fff',
-    borderRadius: 24,
-    padding: 22,
-    alignItems: 'center'
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 3
   },
 
   modalTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#ff69b4'
+    textAlign: 'center'
   },
 
   modalText: {
-    marginVertical: 15,
+    marginVertical: 10,
     textAlign: 'center'
   },
 
   modalBtn: {
-    backgroundColor: '#ffd6ea',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 14
+    padding: 12,
+    borderRadius: 12,
+    alignItems: 'center'
   }
-
 });
